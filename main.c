@@ -57,7 +57,7 @@
  * LETTER = VARIÁVEL QUE ARMAZENA A LETRA
  */
 
-uint32_t TIMER = 4000; // (0,050 [S] / (1 / 4000000))
+uint32_t TIMER = 4000000; // 
 unsigned char LETTER = ' '; // VARIÁVEL QUE ARMAZENA A LETRA A SER ENVIADA
 int COUNT = 0;
 /*
@@ -351,8 +351,8 @@ void inicializa_LCD()
     GPIO_PORTB_DEN_R |= 0xFF;
     GPIO_PORTA_DEN_R |= 0xE0;
 
-    NVIC_ST_RELOAD_R = 4000000;           //Configura sistick pag 140, limitado 24 bits, quantidade de ciclos de clock
-    NVIC_ST_CTRL_R = 0x01;
+    NVIC_ST_RELOAD_R = TIMER;           //Configura sistick pag 140, limitado 24 bits, quantidade de ciclos de clock
+    
 
     delay_us(60500);
     GPIO_PORTB_DATA_R = 0x30;
