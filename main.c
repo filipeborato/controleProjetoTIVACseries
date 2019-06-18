@@ -57,7 +57,7 @@
  * LETTER = VARIÁVEL QUE ARMAZENA A LETRA
  */
 
-uint32_t TIMER = 4000000; // 
+uint32_t TIMER = 4000; // 
 unsigned char LETTER = ' '; // VARIÁVEL QUE ARMAZENA A LETRA A SER ENVIADA
 int COUNT = 0;
 /*
@@ -354,16 +354,16 @@ void inicializa_LCD()
     NVIC_ST_RELOAD_R = TIMER;           //Configura sistick pag 140, limitado 24 bits, quantidade de ciclos de clock
     
 
-    delay_us(60500);
+    delay_us(70);
     GPIO_PORTB_DATA_R = 0x30;
 
-    delay_us(100000);
+    delay_us(100);
     pulso_enable();
 
-    delay_us(20000);
+    delay_us(20);
     pulso_enable();
 
-    delay_us(20000);
+    delay_us(20);
     pulso_enable();
 
     GPIO_PORTB_DATA_R = 0x3C;
@@ -396,7 +396,7 @@ void cmd_LCD(unsigned char c, int count)
     if (count == 1)
     {
         GPIO_PORTA_DATA_R = 0x00;
-        delay_us(4000);
+        delay_us(4);
         GPIO_PORTB_DATA_R = 0x01;
         pulso_enable();
         GPIO_PORTB_DATA_R = 0x02;
@@ -405,12 +405,12 @@ void cmd_LCD(unsigned char c, int count)
     if (count == 16)
     {
         GPIO_PORTA_DATA_R = 0x00;
-        delay_us(4000);
+        delay_us(4);
         GPIO_PORTB_DATA_R = 0xC0;
         pulso_enable();
     }
     GPIO_PORTA_DATA_R = 0x20;
-    delay_us(4000);
+    delay_us(4);
     GPIO_PORTB_DATA_R = c;
     pulso_enable();
 
@@ -430,7 +430,7 @@ void escreve_LCD(char *c)
 void pulso_enable()
 {
     ENABLE;
-    delay_us(10000);
+    delay_us(10);
     ENABLE;
 }
 
