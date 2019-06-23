@@ -57,7 +57,7 @@
  * LETTER = VARIÁVEL QUE ARMAZENA A LETRA
  */
 
-uint32_t TIMER = 4000; // 
+uint32_t TIMER = 40000; //
 unsigned char LETTER = ' '; // VARIÁVEL QUE ARMAZENA A LETRA A SER ENVIADA
 int COUNT = 0;
 /*
@@ -88,6 +88,8 @@ void config(void)
 {
     //Habilitando A,B,C,D,E
     SYSCTL_RCGCGPIO_R = 0x1F;
+    //DISPLAY CONFIG
+    inicializa_LCD();
 
     /*
      * CONFIGURAMOS E HABILITAMOS A NVIC PARA UTILIZARMOS O SYSTICK COMO TIMER e INTERRUPÇÂO
@@ -97,40 +99,56 @@ void config(void)
     NVIC_ST_CTRL_R = NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_ENABLE;
 
     /*
+        * CONFIGURAMOS UART (A0 E A1)
+        * 1 - ATIVAMOS O CLOCK NA UART0
+        * 2 - HABILITAMOS FUNCIONALIDADE ALTERNATIVA NAS PORTAS
+        * 3 - HABILITAMOS A FUNCIONALIDADE UART NAS PORTAS
+        * 3 - CONFIGURAMOS CONECTIVIDADE
+        * 4 - HABILITAMOS AS PORTAS USADAS NA UART
+        */
+
+       SYSCTL_RCGCUART_R = 0x01;
+       GPIO_PORTA_DEN_R = 0;
+
+       GPIO_PORTA_AFSEL_R |= (A0 | A1);
+
+       GPIO_PORTA_PCTL_R = 0x11;
+
+       UART0_CTL_R &= 0x00;                                // DESABILITAMOS UART0
+       UART0_IBRD_R = 8;                                   // BAUDRATE - 115200
+       UART0_FBRD_R = 44;                                  // BAUDRATE
+       UART0_LCRH_R = (UART_LCRH_WLEN_8 | UART_LCRH_FEN);  // 8 BITS SENDO ENVIADOS / SEM PARIDADE / 1 BIT DE STOP / FIFOs
+       UART0_CC_R = 0x00;                                  // USAMOS SYSTEM CLOCK COMO FONTE DE CLOCK
+       UART0_CTL_R |= 0x101;                               // HABILITAMOS UART0 APENAS TX LIGADO
+
+       //
+
+    /*
      * CONFIGURAMOS GPIOS:
      * 1 - COMO ENTRADA
      * 2 - SETAMOS 0 NO DATA
      * 3 - COLOCAMOS AS PORTAS COMO PULL-UP RESISTOR
      * 4 - HABILITAMOS AS PORTAS
      */
-    GPIO_PORTA_DIR_R = 0X00 ;
+    GPIO_PORTA_DIR_R |= 0X00 ;
     GPIO_PORTB_DIR_R = 0X00 ;
     GPIO_PORTC_DIR_R = 0X00 ;
     GPIO_PORTD_DIR_R = 0X00 ;
     GPIO_PORTE_DIR_R = 0X00 ;
 
-    GPIO_PORTA_DATA_R = 0;
-    GPIO_PORTB_DATA_R = 0;
-    GPIO_PORTC_DATA_R = 0;
-    GPIO_PORTD_DATA_R = 0;
-    GPIO_PORTE_DATA_R = 0;
+
 
     GPIO_PORTA_PUR_R = (A2 | A3 | A4 );
     GPIO_PORTC_PUR_R = (C4 | C5 | C6 | C7);
     GPIO_PORTE_PUR_R = (E1 | E2 | E3 | E4);
 
 
-    GPIO_PORTA_DEN_R = (A2 | A3 | A4 );
-    GPIO_PORTC_DEN_R = (C4 | C5 | C6 | C7);
-    GPIO_PORTE_DEN_R = (E1 | E2 | E3 | E4);
-
     /*
      * CONFIGURAMOS INTERRUPÇÕES
-     * 1 - LIGAMOS AS INTERRUPÇÕES NA NVIC PARA AS PORTAS UTILIZADAS (B, C, D)
+     * 1 - LIGAMOS AS INTERRUPÇÕES NA NVIC PARA AS PORTAS UTILIZADAS (A, C, E)
      * 2 - CONFIGURAMOS EVENTOS
      */
 
-    NVIC_EN0_R = 0x15; // A, C, E
 
     GPIO_PORTA_IS_R = 0x00; // DESABILITA SENSIBILIDADE POR LEVEL E "ATIVAMOS" POR BORDA
     GPIO_PORTC_IS_R = 0x00;
@@ -149,6 +167,21 @@ void config(void)
     GPIO_PORTC_IM_R = (C4 | C5 | C6 | C7);
     GPIO_PORTE_IM_R = (E1 | E2 | E3 | E4);
 
+    NVIC_EN0_R = 0x15; // A, C, E
+
+    GPIO_PORTA_DATA_R = 0x00;
+    GPIO_PORTB_DATA_R = 0x00;
+    GPIO_PORTC_DATA_R = 0x00;
+    GPIO_PORTD_DATA_R = 0x00;
+    GPIO_PORTE_DATA_R = 0x00;
+
+    GPIO_PORTA_DEN_R = (A2 | A3 | A4 );
+    GPIO_PORTC_DEN_R = (C4 | C5 | C6 | C7);
+    GPIO_PORTE_DEN_R = (E1 | E2 | E3 | E4);
+    GPIO_PORTA_DEN_R = (A0 | A1); //enable do uart
+    GPIO_PORTA_DEN_R = 0xE0;//enable display
+
+
     /*
      * CONFIGURAMOS ANALOG-DIGITAL CONVERSOR (D0 E D1)
      * 1 - HABILITAMOS OS 2 MÓDULOS (ADC0 E ADC1)
@@ -159,9 +192,9 @@ void config(void)
 
     SYSCTL_RCGCADC_R = 0x03;
 
-    GPIO_PORTD_AFSEL_R = (D0 | D1 | D2 | D3);
+    GPIO_PORTD_AFSEL_R = (D0 | D1 );//| D2 | D3);
 
-    GPIO_PORTD_AMSEL_R = (D0 | D1 | D2 | D3);
+    GPIO_PORTD_AMSEL_R = (D0 | D1 );//| D2 | D3);
 
     ADC0_ACTSS_R = 0x00;
     ADC0_EMUX_R = 0x0F;
@@ -177,31 +210,11 @@ void config(void)
     ADC1_ACTSS_R = 0x01;
     ADC1_PSSI_R = 0x01;
 
-    /*
-     * CONFIGURAMOS UART (A0 E A1)
-     * 1 - ATIVAMOS O CLOCK NA UART0
-     * 2 - HABILITAMOS FUNCIONALIDADE ALTERNATIVA NAS PORTAS
-     * 3 - HABILITAMOS A FUNCIONALIDADE UART NAS PORTAS
-     * 3 - CONFIGURAMOS CONECTIVIDADE
-     * 4 - HABILITAMOS AS PORTAS USADAS NA UART
-     */
 
-    SYSCTL_RCGCUART_R = 0x01;
-
-    GPIO_PORTA_AFSEL_R = (A0 | A1);
-
-    GPIO_PORTA_PCTL_R = 0x11;
-
-    UART0_CTL_R &= 0x00;                                // DESABILITAMOS UART0
-    UART0_IBRD_R = 8;                                   // BAUDRATE - 115200
-    UART0_FBRD_R = 44;                                  // BAUDRATE
-    UART0_LCRH_R = (UART_LCRH_WLEN_8 | UART_LCRH_FEN);  // 8 BITS SENDO ENVIADOS / SEM PARIDADE / 1 BIT DE STOP / FIFOs
-    UART0_CC_R = 0x00;                                  // USAMOS SYSTEM CLOCK COMO FONTE DE CLOCK
-    UART0_CTL_R |= 0x101;                               // HABILITAMOS UART0 APENAS TX LIGADO
-
-    GPIO_PORTA_DEN_R = (A0 | A1);
-
-    inicializa_LCD();
+    //setando ris em 0 por algum motivo desconhecido
+    GPIO_PORTC_ICR_R = C4;
+    GPIO_PORTA_ICR_R = A2;
+    GPIO_PORTA_ICR_R = A3;
 
 }
 void delay_us(uint32_t delay){
@@ -232,19 +245,20 @@ void SysTick_INTERRUPT(void)
 
 void ADC_Read(void)
 {
-    uint32_t x = 0x00, y = 0x00;
-    int x2 = 0x00, y2 = 0x00;
+    uint32_t x = 0, y = 0;
+    uint8_t x2 = 0, y2 = 0;
 
     x = ADC0_SSFIFO0_R; //LEITURA ADC0
     y = ADC1_SSFIFO0_R; //LEITURA ADC1
 
     // IMPLEMENTAR CONDIÇÃO PARA NÃO MANDAR NADA
-    if ((x < 2000 || x > 2300) || (y < 2000 || y > 2300))
+    if ((x < 2300 || x > 2500)||(y < 2300 || y > 2500))
     {
-        x2 = x >> 4; // transfere para 8 bits (LIMITAÇÃO UART)
-        y2 = y >> 4; // transfere para 8 bits (LIMITAÇÃO UART)
-        UART_Send(x2, 1);
-        UART_Send(y2, 1);
+            x2 = x >> 4; // transfere para 8 bits (LIMITAÇÃO UART)
+            y2 = y >> 4; // transfere para 8 bits (LIMITAÇÃO UART)
+            UART_Send(x2, 1);
+            UART_Send(y2, 1);
+
     }
 }
 
@@ -281,16 +295,16 @@ void IntPortA(void)
     if(GPIO_PORTA_RIS_R&A2)
     {
         GPIO_PORTA_ICR_R = A2;
-        UART_Send('P', 1);
+        UART_Send('P', 2);
     }
     else if(GPIO_PORTA_RIS_R&A3)
     {
-        GPIO_PORTA_ICR_R = A2;
+        GPIO_PORTA_ICR_R = A3;
         UART_Send('A', 1);
     }
     else if(GPIO_PORTA_RIS_R&A4)
     {
-        GPIO_PORTA_ICR_R = A2;
+        GPIO_PORTA_ICR_R = A4;
         UART_Send('B', 1);
     }
 }
@@ -352,18 +366,18 @@ void inicializa_LCD()
     GPIO_PORTA_DEN_R |= 0xE0;
 
     NVIC_ST_RELOAD_R = TIMER;           //Configura sistick pag 140, limitado 24 bits, quantidade de ciclos de clock
-    
+    NVIC_ST_CTRL_R = 0x01;
 
-    delay_us(70);
+    delay_us(60500);
     GPIO_PORTB_DATA_R = 0x30;
 
-    delay_us(100);
+    delay_us(100000);
     pulso_enable();
 
-    delay_us(20);
+    delay_us(20000);
     pulso_enable();
 
-    delay_us(20);
+    delay_us(20000);
     pulso_enable();
 
     GPIO_PORTB_DATA_R = 0x3C;
@@ -396,7 +410,7 @@ void cmd_LCD(unsigned char c, int count)
     if (count == 1)
     {
         GPIO_PORTA_DATA_R = 0x00;
-        delay_us(4);
+        delay_us(4000);
         GPIO_PORTB_DATA_R = 0x01;
         pulso_enable();
         GPIO_PORTB_DATA_R = 0x02;
@@ -405,12 +419,12 @@ void cmd_LCD(unsigned char c, int count)
     if (count == 16)
     {
         GPIO_PORTA_DATA_R = 0x00;
-        delay_us(4);
+        delay_us(4000);
         GPIO_PORTB_DATA_R = 0xC0;
         pulso_enable();
     }
     GPIO_PORTA_DATA_R = 0x20;
-    delay_us(4);
+    delay_us(4000);
     GPIO_PORTB_DATA_R = c;
     pulso_enable();
 
@@ -430,7 +444,7 @@ void escreve_LCD(char *c)
 void pulso_enable()
 {
     ENABLE;
-    delay_us(10);
+    delay_us(10000);
     ENABLE;
 }
 
