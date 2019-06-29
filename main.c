@@ -95,11 +95,13 @@ void config(void)
     //Habilitando A,B,C,D,E
     SYSCTL_RCGCGPIO_R = 0x1F;
     //DISPLAY CONFIG
-    //inicializa_LCD();
+    inicializa_LCD();
 
     /*
      * CONFIGURAMOS E HABILITAMOS A NVIC PARA UTILIZARMOS O SYSTICK COMO TIMER e INTERRUPÇÂO
      */
+    //SYSCTL_RCGCGPIO_R = 0x01;
+    //GPIO_PORTA_LOCK_R = 0x4C4F434B;
 
     NVIC_ST_RELOAD_R = TIMER;
     NVIC_ST_CTRL_R = NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_ENABLE;
@@ -184,8 +186,8 @@ void config(void)
     GPIO_PORTA_DEN_R = (A2 | A3 | A4 );
     GPIO_PORTC_DEN_R = (C4 | C5 | C6 | C7);
     GPIO_PORTE_DEN_R = (E1 | E2 | E3 | E4);
-    GPIO_PORTA_DEN_R = (A0 | A1); //enable do uart
-    //GPIO_PORTA_DEN_R = 0xE0;//enable display
+    GPIO_PORTA_DEN_R |= (A0 | A1); //enable do uart
+    GPIO_PORTA_DEN_R |= 0xE0;//enable display
 
 
     /*
@@ -222,7 +224,7 @@ void config(void)
     GPIO_PORTA_ICR_R = A2;
     GPIO_PORTA_ICR_R = A3;
     //inicializa a memoria
-    //EInit();
+    EInit();
 
 }
 void delay_us(uint32_t delay){
