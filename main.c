@@ -14,7 +14,7 @@
  * ANG2 y - D3
  * ação C - E1
  * ação D - E2
- * ação E - E4
+ * ação E - E3
  * ação F - E5
  */
 #include<tm4c123gh6pm.h>
@@ -49,6 +49,8 @@
 //13 DB6  - PB6
 //14 DB7  - PB7
 #define ENABLE GPIO_PORTA_DATA_R^=0x40
+#define EEPROM_INIT_OK 0
+#define EEPROM_INIT_ERROR 2
 
 /*
  * VARIÁVEIS
@@ -58,6 +60,7 @@
  */
 
 uint32_t TIMER = 40000; //
+uint8_t bloco=0, registro=0;
 unsigned char LETTER = ' '; // VARIÁVEL QUE ARMAZENA A LETRA A SER ENVIADA
 int COUNT = 0;
 /*
@@ -73,6 +76,9 @@ void escreve_LCD(char *c);
 void cmd_LCD(unsigned char c, int count);
 void cmd_LCD(unsigned char c, int count);
 void inicializa_LCD();
+uint32_t EInit(void);
+uint32_t EEPROM_read(uint8_t block, uint8_t offset);
+void EEPROM_write(uint8_t block, uint8_t offset, uint32_t word);
 
 void main(void)
 {
@@ -89,7 +95,7 @@ void config(void)
     //Habilitando A,B,C,D,E
     SYSCTL_RCGCGPIO_R = 0x1F;
     //DISPLAY CONFIG
-    inicializa_LCD();
+    //inicializa_LCD();
 
     /*
      * CONFIGURAMOS E HABILITAMOS A NVIC PARA UTILIZARMOS O SYSTICK COMO TIMER e INTERRUPÇÂO
@@ -179,7 +185,7 @@ void config(void)
     GPIO_PORTC_DEN_R = (C4 | C5 | C6 | C7);
     GPIO_PORTE_DEN_R = (E1 | E2 | E3 | E4);
     GPIO_PORTA_DEN_R = (A0 | A1); //enable do uart
-    GPIO_PORTA_DEN_R = 0xE0;//enable display
+    //GPIO_PORTA_DEN_R = 0xE0;//enable display
 
 
     /*
@@ -215,6 +221,8 @@ void config(void)
     GPIO_PORTC_ICR_R = C4;
     GPIO_PORTA_ICR_R = A2;
     GPIO_PORTA_ICR_R = A3;
+    //inicializa a memoria
+    //EInit();
 
 }
 void delay_us(uint32_t delay){
@@ -275,12 +283,12 @@ void UART_Send(unsigned char c, int aux)
      * 1 - BOTÕES COM CHAR
      * 2 - BOTÃO START
      */
-
     switch(aux)
     {
     case 1:
         if (LETTER == ' ')
         LETTER = c; //
+
         break;
     case 2:
         UART0_DR_R = c;
@@ -446,5 +454,43 @@ void pulso_enable()
     ENABLE;
     delay_us(10000);
     ENABLE;
+}
+
+uint32_t EInit(void)
+{
+    uint8_t aux;
+    SYSCTL_RCGCEEPROM_R = 0x01;
+    for(aux=0;aux<2;aux++){}
+    while((EEPROM_EEDONE_R & 0x01) == 0x01){}
+    if(((EEPROM_EESUPP_R & 0x08) == 0x08) || ((EEPROM_EESUPP_R & 0x04) == 0x04))
+    {
+        return(EEPROM_INIT_ERROR);
+    }
+
+    SYSCTL_SREEPROM_R = 0x01;
+    SYSCTL_SREEPROM_R = 0x00;
+    for(aux=0;aux<2;aux++){}
+    while((EEPROM_EEDONE_R & 0x01) == 0x01){}
+    if(((EEPROM_EESUPP_R & 0x08) == 0x08) || ((EEPROM_EESUPP_R & 0x04) == 0x04))
+    {
+        return(EEPROM_INIT_ERROR);
+    }
+
+    return(EEPROM_INIT_OK);
+
+}
+
+uint32_t EEPROM_read(uint8_t block, uint8_t offset){
+    while(((EEPROM_EEDONE_R&0x20)==0x20) || ((EEPROM_EEDONE_R&0x08)==0x08) || ((EEPROM_EEDONE_R&0x04)==0x04)){}
+    EEPROM_EEBLOCK_R = (uint8_t)(1<<block);
+    EEPROM_EEOFFSET_R = (uint8_t)offset;
+    return (uint32_t)EEPROM_EERDWR_R;
+}
+
+void EEPROM_write(uint8_t block, uint8_t offset, uint32_t word) {
+    while(((EEPROM_EEDONE_R&0x20)==0x20) || ((EEPROM_EEDONE_R&0x08)==0x08) || ((EEPROM_EEDONE_R&0x04)==0x04)){}
+    EEPROM_EEBLOCK_R =  (uint8_t)(1<<block);
+    EEPROM_EEOFFSET_R = (uint8_t)offset;
+    EEPROM_EERDWR_R = (uint32_t)word;
 }
 
