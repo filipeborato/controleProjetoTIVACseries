@@ -51,7 +51,6 @@
 #define ENABLE GPIO_PORTA_DATA_R^=0x40
 #define EEPROM_INIT_OK 0
 #define EEPROM_INIT_ERROR 2
-
 /*
  * VARIÁVEIS
  * TIMER = TEMPO DE CONTAGEM DO SYSTICK
@@ -81,17 +80,18 @@ uint32_t EInit(void);
 uint32_t EEPROM_read(uint8_t block, uint8_t offset);
 void EEPROM_write(uint8_t block, uint8_t offset, uint32_t word);
 void Set_memo(uint32_t word);
-//void Set_blocoReg();
+void Set_blocoReg();
 
 void main(void)
 {
-    //inicializa_LCD();
+    inicializa_LCD();
     config();
+    NVIC_ST_CTRL_R = NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_ENABLE;
 
     while(1)
     {
         //delay_us(40);
-        ADC_Read();
+        //ADC_Read();
     }
 }
 
@@ -112,7 +112,7 @@ void config(void)
    // GPIO_PORTA_CR_R = 0xFF;
 
     NVIC_ST_RELOAD_R = TIMER;
-    NVIC_ST_CTRL_R = NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_ENABLE;
+    
 
 
     /*
@@ -157,14 +157,11 @@ void config(void)
     GPIO_PORTA_PUR_R = (A2 | A3 | A4 );
     GPIO_PORTC_PUR_R = (C4 | C5 | C6 | C7);
     GPIO_PORTE_PUR_R = (E1 | E2 | E3 | E4);
-
-
     /*
      * CONFIGURAMOS INTERRUPÇÕES
      * 1 - LIGAMOS AS INTERRUPÇÕES NA NVIC PARA AS PORTAS UTILIZADAS (A, C, E)
      * 2 - CONFIGURAMOS EVENTOS
      */
-
 
     GPIO_PORTA_IS_R = 0x00; // DESABILITA SENSIBILIDADE POR LEVEL E "ATIVAMOS" POR BORDA
     GPIO_PORTC_IS_R = 0x00;
@@ -177,7 +174,6 @@ void config(void)
     GPIO_PORTA_IBE_R = 0x00; // DESLIGA BOTH EDGES DESSA FORMA O IEV CONTROLA
     GPIO_PORTC_IBE_R = 0x00;
     GPIO_PORTE_IBE_R = 0x00;
-
 
     GPIO_PORTA_IM_R = (A2 | A3 | A4 ); // HABILITA INTERRUPÇÃO / INTERRUPTION MASK
     GPIO_PORTC_IM_R = (C4 | C5 | C6 | C7);
@@ -194,9 +190,6 @@ void config(void)
     GPIO_PORTC_DEN_R = (C4 | C5 | C6 | C7);
     GPIO_PORTE_DEN_R = (E1 | E2 | E3 | E4);
     GPIO_PORTA_DEN_R |= (A0 | A1); //enable do uart
-
-
-
     /*
      * CONFIGURAMOS ANALOG-DIGITAL CONVERSOR (D0 E D1)
      * 1 - HABILITAMOS OS 2 MÓDULOS (ADC0 E ADC1)
@@ -204,7 +197,6 @@ void config(void)
      * 3 - HABILITAMOS A FUNCIONALIDADE ANALÓGICA NAS PORTAS
      * 4 - CONFIGURAMOS OS MÓDULOS ADC0 E ADC1
      */
-
     SYSCTL_RCGCADC_R = 0x03;
 
     GPIO_PORTD_AFSEL_R = (D0 | D1 );//| D2 | D3);
@@ -233,10 +225,8 @@ void config(void)
     //inicializa a memoria
 
     EInit();
-
-
-
 }
+
 void delay_us(uint32_t delay){
     volatile uint32_t elapsedTime;
     uint32_t startTime = NVIC_ST_CURRENT_R;
@@ -275,26 +265,20 @@ void ADC_Read(void)
     // IMPLEMENTAR CONDIÇÃO PARA NÃO MANDAR NADA
     if ((x < 2200 || x > 2800)||(y < 2100 || y > 2900))
     {
-            delay_us(40);
-
-            x2 = x >> 4; // transfere para 8 bits (LIMITAÇÃO UART)
-            y2 = y >> 4; // transfere para 8 bits (LIMITAÇÃO UART)
-            delay_us(40);
-            UART_Send(x2, 1);
-            UART_Send(y2, 1);
-
+        delay_us(40);
+        x2 = x >> 4; // transfere para 8 bits (LIMITAÇÃO UART)
+        y2 = y >> 4; // transfere para 8 bits (LIMITAÇÃO UART)
+        delay_us(40);
+        UART_Send(x2, 1);
+        UART_Send(y2, 1);
     }
 }
-
-
 /*
  *  UART_Send
  *  1 - MANDA INFORMAÇÃO
  */
-
 void UART_Send(unsigned char c, int aux)
 {
-
     /*
      * 1 - BOTÕES COM CHAR
      * 2 - BOTÃO START
@@ -304,13 +288,9 @@ void UART_Send(unsigned char c, int aux)
     case 1:
         if (LETTER == ' ')
         LETTER = c; //
-
-
         break;
     case 2:
         UART0_DR_R = c;
-
-
         break;
     default:
         break;
@@ -453,7 +433,7 @@ void inicializa_LCD()
     pulso_enable();
 
     escreve_LCD("ESPERE O BOOT  DO SISTEMA!!");
-    /*delay_us(8000000);
+    delay_us(8000000);
     delay_us(8000000);
     escreve_LCD(".");
     delay_us(4000000);
@@ -466,24 +446,22 @@ void inicializa_LCD()
     delay_us(8000000);
     escreve_LCD("Pronto, Sistema butado!!");
     delay_us(8000000);
-    delay_us(2000000);*/
+    delay_us(2000000);
 
-  /* if(EEPROM_read(0, 1)!=0 && EInit()==0){
+   if(EInit()==0){
         escreve_LCD("Registro dos Botoes anteriores:");
+        Set_blocoReg();
         delay_us(12000000);
         int i,j;
-        for(i=0;i<=EEPROM_read(0, 0);i++){
-            for(j=0;i<=EEPROM_read(0, 1);j++){
-                escreve_LCD('EEPROM_read(bloco, registro)');
+        for(i=0;i<=EEPROM_read(1, 0);i++){
+            for(j=0;i<=EEPROM_read(1, 1);j++){
+               escreve_LCD(EEPROM_read(bloco, registro)>>4+48);
                delay_us(8000000);
             }
         }
-
-
-    }*/
+    }
 
     TIMER = 4000;
-
 }
 
 void cmd_LCD(unsigned char c, int count)
@@ -510,7 +488,6 @@ void cmd_LCD(unsigned char c, int count)
     GPIO_PORTB_DATA_R = c;
     pulso_enable();
     TIMER=4000;
-
 }
 
 void escreve_LCD(char *c)
@@ -520,7 +497,6 @@ void escreve_LCD(char *c)
     {
         count++;
         cmd_LCD(*c, count);
-
     }
 }
 
@@ -573,32 +549,33 @@ void EEPROM_write(uint8_t block, uint8_t offset, uint32_t word) {
 void Set_memo(uint32_t word){
 
     if(EInit()==0){
-        /*if(bloco==0 && registro==0){
+        if(bloco==1 && registro==0){
             Set_blocoReg();
-        }*/
+        }
 
         if(registro==16){
             registro=0;
             bloco++;
         }
-        if(bloco==33){
+        if(bloco>33){
             bloco=1;
         }
+        registro=2;
         EEPROM_write(bloco, registro, word);
         registro++;
-        /*
-        EEPROM_write(0, 0, (uint32_t)registro);
-        EEPROM_write(0, 1, (uint32_t)bloco);*/
+
+        EEPROM_write(1, 0, (uint32_t)registro);
+        EEPROM_write(1, 1, (uint32_t)bloco);
     }
 }
-/*
+
 void Set_blocoReg(){
     uint8_t blocoinit, registroinit;
-    bloco=0;
-    registro=2;
+    bloco=1;
+
     blocoinit=EEPROM_read(1,0);
     registroinit=EEPROM_read(1,1);
     bloco=blocoinit;
     registro=registroinit;
-}*/
+}
 
