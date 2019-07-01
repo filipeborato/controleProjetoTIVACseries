@@ -19,6 +19,7 @@
  */
 #include<tm4c123gh6pm.h>
 #include<inttypes.h>
+#include <stdlib.h>
 #define A0 0x01
 #define A1 0x02
 #define A2 0x04
@@ -81,17 +82,18 @@ uint32_t EInit(void);
 uint32_t EEPROM_read(uint8_t block, uint8_t offset);
 void EEPROM_write(uint8_t block, uint8_t offset, uint32_t word);
 void Set_memo(uint32_t word);
-//void Set_blocoReg();
+void Set_blocoReg();
 
 void main(void)
 {
-    //inicializa_LCD();
+
     config();
 
+	NVIC_ST_CTRL_R = NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_ENABLE;
     while(1)
     {
         //delay_us(40);
-        ADC_Read();
+        //ADC_Read();
     }
 }
 
@@ -102,7 +104,7 @@ void config(void)
     //delay_us(40000);
     SYSCTL_RCGCGPIO_R |= 0x1F;
     //DISPLAY CONFIG
-
+    inicializa_LCD();
     //EInit();
     /*
      * CONFIGURAMOS E HABILITAMOS A NVIC PARA UTILIZARMOS O SYSTICK COMO TIMER e INTERRUPÇÂO
@@ -112,7 +114,7 @@ void config(void)
    // GPIO_PORTA_CR_R = 0xFF;
 
     NVIC_ST_RELOAD_R = TIMER;
-    NVIC_ST_CTRL_R = NVIC_ST_CTRL_INTEN | NVIC_ST_CTRL_ENABLE;
+    
 
 
     /*
@@ -453,7 +455,7 @@ void inicializa_LCD()
     pulso_enable();
 
     escreve_LCD("ESPERE O BOOT  DO SISTEMA!!");
-    /*delay_us(8000000);
+    delay_us(8000000);
     delay_us(8000000);
     escreve_LCD(".");
     delay_us(4000000);
@@ -466,16 +468,21 @@ void inicializa_LCD()
     delay_us(8000000);
     escreve_LCD("Pronto, Sistema butado!!");
     delay_us(8000000);
-    delay_us(2000000);*/
+    delay_us(2000000);
 
-  /* if(EEPROM_read(0, 1)!=0 && EInit()==0){
+    /*if(EInit()==0){
+
         escreve_LCD("Registro dos Botoes anteriores:");
-        delay_us(12000000);
-        int i,j;
-        for(i=0;i<=EEPROM_read(0, 0);i++){
-            for(j=0;i<=EEPROM_read(0, 1);j++){
-                escreve_LCD('EEPROM_read(bloco, registro)');
-               delay_us(8000000);
+        Set_blocoReg();
+        delay_us(120000);
+
+
+       for(i=0;i<=EEPROM_read(1, 0);i++){
+            for(j=0;i<=EEPROM_read(1, 1);j++){
+
+                EEPROM_read(i, j)
+                escreve_LCD(EEPROM_read(i, j))>>4+48);
+               delay_us(800000);
             }
         }
 
@@ -573,9 +580,9 @@ void EEPROM_write(uint8_t block, uint8_t offset, uint32_t word) {
 void Set_memo(uint32_t word){
 
     if(EInit()==0){
-        /*if(bloco==0 && registro==0){
+        if(bloco==1 && registro==0){
             Set_blocoReg();
-        }*/
+        }
 
         if(registro==16){
             registro=0;
@@ -584,21 +591,21 @@ void Set_memo(uint32_t word){
         if(bloco==33){
             bloco=1;
         }
+		registro=2;
         EEPROM_write(bloco, registro, word);
         registro++;
-        /*
-        EEPROM_write(0, 0, (uint32_t)registro);
-        EEPROM_write(0, 1, (uint32_t)bloco);*/
+
+        EEPROM_write(1, 0, (uint32_t)registro);
+        EEPROM_write(1, 1, (uint32_t)bloco);
     }
 }
-/*
+
 void Set_blocoReg(){
     uint8_t blocoinit, registroinit;
-    bloco=0;
-    registro=2;
+    bloco=1;    
     blocoinit=EEPROM_read(1,0);
     registroinit=EEPROM_read(1,1);
     bloco=blocoinit;
     registro=registroinit;
-}*/
+}
 
