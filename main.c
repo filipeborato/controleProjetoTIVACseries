@@ -610,8 +610,6 @@ void EEPROM_write(uint8_t block, uint8_t offset, uint32_t word) {
     EEPROM_EERDWR_R = (uint32_t)word;
 }
 void Set_memo(uint32_t word){
-
-
         if(registro > 15){
             registro=0;
             bloco++;
@@ -621,8 +619,6 @@ void Set_memo(uint32_t word){
         }
         EEPROM_write(bloco, registro, word);
         registro++;
-
-
 }
 
 
