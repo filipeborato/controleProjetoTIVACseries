@@ -19,6 +19,7 @@
  */
 #include<tm4c123gh6pm.h>
 #include<inttypes.h>
+#include <stdlib.h>
 #define A0 0x01
 #define A1 0x02
 #define A2 0x04
@@ -85,8 +86,9 @@ void Set_memo(uint32_t word);
 
 void main(void)
 {
-    //inicializa_LCD();
+
     config();
+
 
     while(1)
     {
@@ -102,7 +104,7 @@ void config(void)
     //delay_us(40000);
     SYSCTL_RCGCGPIO_R |= 0x1F;
     //DISPLAY CONFIG
-
+    inicializa_LCD();
     //EInit();
     /*
      * CONFIGURAMOS E HABILITAMOS A NVIC PARA UTILIZARMOS O SYSTICK COMO TIMER e INTERRUPÇÂO
@@ -191,10 +193,11 @@ void config(void)
     GPIO_PORTE_DATA_R = 0x00;
 
     GPIO_PORTA_DEN_R |= (A2 | A3 | A4 );
+    GPIO_PORTB_DEN_R = 0xFF;
     GPIO_PORTC_DEN_R = (C4 | C5 | C6 | C7);
     GPIO_PORTE_DEN_R = (E1 | E2 | E3 | E4);
     GPIO_PORTA_DEN_R |= (A0 | A1); //enable do uart
-
+    GPIO_PORTA_DEN_R |= 0xE0; //enable do uart
 
 
     /*
@@ -207,20 +210,20 @@ void config(void)
 
     SYSCTL_RCGCADC_R = 0x03;
 
-    GPIO_PORTD_AFSEL_R = (D0 | D1 );//| D2 | D3);
+    GPIO_PORTD_AFSEL_R = (D2 | D3 );//| D2 | D3);
 
-    GPIO_PORTD_AMSEL_R = (D0 | D1 );//| D2 | D3);
+    GPIO_PORTD_AMSEL_R = (D2 | D3 );//| D2 | D3);
 
     ADC0_ACTSS_R = 0x00;
     ADC0_EMUX_R = 0x0F;
-    ADC0_SSMUX0_R = 0x07;
+    ADC0_SSMUX0_R = 0x05;
     ADC0_SSCTL0_R = 0x02;
     ADC0_ACTSS_R = 0x01;
     ADC0_PSSI_R = 0x01;
 
     ADC1_ACTSS_R = 0x00;
     ADC1_EMUX_R = 0x0F;
-    ADC1_SSMUX0_R = 0x06;
+    ADC1_SSMUX0_R = 0x04;
     ADC1_SSCTL0_R = 0x02;
     ADC1_ACTSS_R = 0x01;
     ADC1_PSSI_R = 0x01;
@@ -273,7 +276,7 @@ void ADC_Read(void)
     y = ADC1_SSFIFO0_R; //LEITURA ADC1
     delay_us(40);
     // IMPLEMENTAR CONDIÇÃO PARA NÃO MANDAR NADA
-    if ((x < 2200 || x > 2800)||(y < 2100 || y > 2900))
+    if ((x < 1900|| x > 2800)||(y < 1900 || y > 2900))
     {
             delay_us(40);
 
@@ -319,12 +322,16 @@ void UART_Send(unsigned char c, int aux)
 
 void IntPortA(void)
 {
+    uint32_t a;
+    char c;
     if(GPIO_PORTA_RIS_R&A2)
     {
         GPIO_PORTA_ICR_R = A2;
         UART_Send('P', 2);
         escreve_LCD("P");
-        Set_memo('P');
+        c = 'P';
+        a = c - '0';
+        Set_memo(a);
 
     }
     else if(GPIO_PORTA_RIS_R&A3)
@@ -332,81 +339,106 @@ void IntPortA(void)
         GPIO_PORTA_ICR_R = A3;
         UART_Send('A', 1);
         escreve_LCD("A");
-        Set_memo('A');
+        c = 'A';
+        a = c - '0';
+        Set_memo(a);
     }
     else if(GPIO_PORTA_RIS_R&A4)
     {
         GPIO_PORTA_ICR_R = A4;
         UART_Send('B', 1);
         escreve_LCD("B");
-        Set_memo('B');
+        c = 'B';
+        a = c - '0';
+        Set_memo(a);
     }
 }
 void IntPortC(void)
 {
+    uint32_t a;
+    char c;
     if(GPIO_PORTC_RIS_R&C4)
     {
         GPIO_PORTC_ICR_R = C4;
         UART_Send('U', 1);
         escreve_LCD("U");
-        Set_memo('U');
+        c = 'U';
+        a = c - '0';
+        Set_memo(a);
     }
     else if (GPIO_PORTC_RIS_R&C5)
     {
         GPIO_PORTC_ICR_R = C5;
         UART_Send('R', 1);
         escreve_LCD("R");
-        Set_memo('R');
+        c = 'R';
+        a = c - '0';
+        Set_memo(a);
     }
     else if (GPIO_PORTC_RIS_R&C6)
     {
         GPIO_PORTC_ICR_R = C6;
         UART_Send('Q', 1);
         escreve_LCD("Q");
-        Set_memo('Q');
+        c = 'Q';
+        a = c - '0';
+        Set_memo(a);
     }
     else if (GPIO_PORTC_RIS_R&C7)
     {
         GPIO_PORTC_ICR_R = C7;
         UART_Send('L', 1);
         escreve_LCD("L");
-        Set_memo('L');
+        c = 'L';
+        a = c - '0';
+        Set_memo(a);
     }
 }
 void IntPortE(void)
 {
+    uint32_t a;
+    char c;
     if(GPIO_PORTE_RIS_R&E1)
     {
         GPIO_PORTE_ICR_R = E1;
         UART_Send('C', 1);
         escreve_LCD("C");
-        Set_memo('C');
+        c = 'C';
+        a = c - '0';
+        Set_memo(a);
     }
     else if(GPIO_PORTE_RIS_R&E2)
     {
         GPIO_PORTE_ICR_R = E2;
         UART_Send('D', 1);
         escreve_LCD("D");
-        Set_memo('D');
+        c = 'D';
+        a = c - '0';
+        Set_memo(a);
     }
     else if(GPIO_PORTE_RIS_R&E3)
     {
         GPIO_PORTE_ICR_R = E3;
         UART_Send('E', 1);
         escreve_LCD("E");
-        Set_memo('E');
+        c = 'E';
+        a = c - '0';
+        Set_memo(a);
     }
     else if(GPIO_PORTE_RIS_R&E4)
     {
         GPIO_PORTE_ICR_R = E4;
         UART_Send('F', 1);
         escreve_LCD("F");
-        Set_memo('F');
+        c = 'F';
+        a = c - '0';
+        Set_memo(a);
     }
 }
 
 void inicializa_LCD()
 {
+    int i,j;
     TIMER = 4000000;
     SYSCTL_RCGCGPIO_R |= 0x03;
     GPIO_PORTB_DATA_R = 0x00;
@@ -453,7 +485,7 @@ void inicializa_LCD()
     pulso_enable();
 
     escreve_LCD("ESPERE O BOOT  DO SISTEMA!!");
-    /*delay_us(8000000);
+    delay_us(8000000);
     delay_us(8000000);
     escreve_LCD(".");
     delay_us(4000000);
@@ -466,21 +498,28 @@ void inicializa_LCD()
     delay_us(8000000);
     escreve_LCD("Pronto, Sistema butado!!");
     delay_us(8000000);
-    delay_us(2000000);*/
-
-  /* if(EEPROM_read(0, 1)!=0 && EInit()==0){
+    delay_us(2000000);
+/*
+ if(EInit()==0){
+        unsigned char leta;
         escreve_LCD("Registro dos Botoes anteriores:");
-        delay_us(12000000);
-        int i,j;
-        for(i=0;i<=EEPROM_read(0, 0);i++){
-            for(j=0;i<=EEPROM_read(0, 1);j++){
-                escreve_LCD('EEPROM_read(bloco, registro)');
+
+        delay_us(8000000);
+        delay_us(5000000);
+
+       for(i=0;i<=EEPROM_EEBLOCK_R;i++){
+           if(i > 0){
+               escreve_LCD("Mais registros: ");
+               delay_us(8000000);
+               delay_us(5000000);
+           }
+            for(j=0;i<=EEPROM_EEOFFSET_R ;j++){
+                leta = EEPROM_read(i, j);
+                cmd_LCD(leta, j);
                delay_us(8000000);
             }
         }
-
-
-    }*/
+     }//*/
 
     TIMER = 4000;
 
@@ -572,33 +611,18 @@ void EEPROM_write(uint8_t block, uint8_t offset, uint32_t word) {
 }
 void Set_memo(uint32_t word){
 
-    if(EInit()==0){
-        /*if(bloco==0 && registro==0){
-            Set_blocoReg();
-        }*/
 
-        if(registro==16){
+        if(registro > 15){
             registro=0;
             bloco++;
         }
-        if(bloco==33){
+        if(bloco > 32){
             bloco=1;
         }
         EEPROM_write(bloco, registro, word);
         registro++;
-        /*
-        EEPROM_write(0, 0, (uint32_t)registro);
-        EEPROM_write(0, 1, (uint32_t)bloco);*/
-    }
+
+
 }
-/*
-void Set_blocoReg(){
-    uint8_t blocoinit, registroinit;
-    bloco=0;
-    registro=2;
-    blocoinit=EEPROM_read(1,0);
-    registroinit=EEPROM_read(1,1);
-    bloco=blocoinit;
-    registro=registroinit;
-}*/
+
 
